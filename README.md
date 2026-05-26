@@ -73,21 +73,6 @@ Attack simulation tools included:
 
 ---
 
-# Repository Structure
-
-```text
-.
-├── detection-engine/
-├── trust-engine/
-├── honeypot-manager/
-├── kubernetes/
-├── monitoring/
-├── scripts/
-├── experiments/
-├── diagrams/
-└── README.md
-```
-
 ---
 
 # Requirements
