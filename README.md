@@ -96,6 +96,15 @@ This project is released under the MIT License.
 
 ---
 
+Thesis Reference
+
+If you use this repository in academic work, please cite:
+```bash
+Your Name,
+“A Flow-Based Post-Breach Detection and Response Framework for Kubernetes Environments,”
+MSc Thesis, University Name, 2026.
+```
+---
 ## ❗Disclaimer
 
 This project was developed for academic and research purposes only. The offensive security tools and techniques used during experimentation must only be executed within authorized environments.
