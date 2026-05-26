@@ -97,8 +97,8 @@ Attack simulation tools included:
 ## Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/your-repository.git
-cd your-repository
+https://github.com/CyberSamuraiBSK/Thesis-Project-Code.git
+cd Thesis-Project-Code
 ```
 
 ## Deploy Kubernetes Components
