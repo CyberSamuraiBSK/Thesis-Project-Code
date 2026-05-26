@@ -72,14 +72,14 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
 ---
 
 ## ⚙️ Example Detection Workflow
-*Attacker initiates malicious activity
-*Hubble exports flow telemetry
-*Detection engine analyzes behavior
-*Trust score decreases
-*Threshold exceeded
-*SDN mitigation policy applied
-*Traffic redirected to honeypot
-*Attacker activity monitored
+* Attacker initiates malicious activity
+* Hubble exports flow telemetry
+* Detection engine analyzes behavior
+* Trust score decreases
+* Threshold exceeded
+* SDN mitigation policy applied
+* Traffic redirected to honeypot
+* Attacker activity monitored
 ---
 
 ## 📋 Prerequisites & Local Development
