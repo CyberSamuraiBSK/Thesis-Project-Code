@@ -2,7 +2,7 @@
 
 This repository contains the source code for my final thesis project as a BSc student: **Post-Breach Cybersecurity inside Datacenter via Anomaly-Detection Network Defence and SDN-Based Deception**. 
 
-The system leverages **Cilium Hubble** to perform non-intrusive Layer 4 (L4) network flow monitoring inside a data center like environment. It utilizes a dynamic **Trust Score Engine** to autonomously detect attack patterns and execute rapid mitigation strategies, either quarantining compromised internal servers or redirecting malicious client pods to decoupled honeypots. To further enchance the engine's realability, it implements a **Layer 7 (L7) health-assisted bypass (whitelist mechanism)** to prevent false positives in scenarios where L4 inspection lacks sufficient context to make accurate security decisions.
+The system leverages **Cilium Hubble** to perform non-intrusive **Layer 4 (L4)** network flow monitoring inside a data center like environment. It utilizes a dynamic **Trust Score Engine** to autonomously detect attack patterns and execute rapid mitigation strategies, either quarantining compromised internal servers or redirecting malicious client pods to decoupled honeypots. To further enchance the engine's realability, it implements a **Layer 7 (L7)** application data monitoring and a **dynamic whitelist mechanism** to prevent false positives in scenarios where L4 inspection lacks sufficient context to make accurate security decisions.
 
 ---
 
@@ -13,7 +13,7 @@ The engine operates on a stateless-to-stateful event-processing architecture. It
 
 ### 1. Dual-Layer (L4/L7) Detection & Whitelisting
 While the engine primary monitors L4 traffic metrics (ports, IPs, connection success ratios, and packet flags) to remain highly lightweight, L4 metrics can sometimes mimic malicious behavior during normal operations (e.g., rapid microservice health probing look identical to port/host scanning). 
-* **The L7 Adaptive Pivot:** When a legitimate Layer 7 interaction is observed (such as an HTTP REST request containing a `/health` endpoint), the system dynamically pivots. It establishes a transient, bidirectional **Health Whitelist Pair**. 
+* **The L7 Adaptive Pivot:** When a legitimate Layer 7 interaction is observed (such as an HTTP towards the `/health` endpoint), the system dynamically pivots. It establishes a transient, bidirectional **Health Whitelist Pair**. 
 * **Bypass Execution:** As long as the whitelisted pods continue to communicate strictly within their established structural pairs, the engine suppresses L4 anomaly penalties. If a pod deviates from its structural pair profile or conducts anomalous activity outside of it, the whitelist is instantly stripped, and aggressive L4 metrics analysis resumes.
 
 ### 2. The Dynamic Trust Engine
