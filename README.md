@@ -1,10 +1,10 @@
-# Flow-Based Post-Breach Detection Framework for Kubernetes
+# Flow-Based Post-Breach Detection Framework for Datacenters
 
 ## Overview
 
 This repository contains the implementation developed for the BSc thesis:
 
-**“A Flow-Based Post-Breach Detection and Response Framework for Kubernetes Environments”**
+**“Post-Breach Cybersecurity inside Datacenters via Anomaly-Detection Network Defence and SDN-Based Deception”**
 
 The framework combines:
 
