@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the implementation developed for the MSc thesis:
+This repository contains the implementation developed for the BSc thesis:
 
 **“A Flow-Based Post-Breach Detection and Response Framework for Kubernetes Environments”**
 
@@ -112,10 +112,8 @@ kubectl apply -f kubernetes/
 ## Start Monitoring Components
 
 ```bash
-python3 detection-engine/main.py
+python3 revisedTrustEngine.py
 ```
-
----
 
 # Usage
 
@@ -161,9 +159,9 @@ can provide effective post-breach detection and response with lower overhead com
 If you use this repository in academic work, please cite:
 
 ```text
-Your Name,
+Symeon Konstantinos Zampethanis,
 “A Flow-Based Post-Breach Detection and Response Framework for Kubernetes Environments,”
-MSc Thesis, University Name, 2026.
+BSc Thesis, University of Thessali, 2026.
 ```
 
 ---
