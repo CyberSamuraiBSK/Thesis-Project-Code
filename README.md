@@ -83,3 +83,13 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
    ```bash
    git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
    cd your-repo-name
+---
+##License
+
+This project is released under the MIT License.
+
+---
+
+##Disclaimer
+
+This project was developed for academic and research purposes only. The offensive security tools and techniques used during experimentation must only be executed within authorized environments.
