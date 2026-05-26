@@ -81,8 +81,11 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
 ### Installation & Execution
 1. Clone the repository into your development environment:
    ```bash
-   git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
-   cd your-repo-name
+   https://github.com/CyberSamuraiBSK/Thesis-Project-Code.git
+   cd Thesis-Project-Code
+2. Run the code:
+   ```bash
+   python3 revisedTrustEngine.py   
 *NOTE It is crucial to proper setup the enviroment (Cillium, Hubble etc.) before running the code as it cannot run nativly on Kubernetes.*  
 
 
