@@ -17,9 +17,9 @@ While the engine primary monitors L4 traffic metrics (ports, IPs, connection suc
 * **Bypass Execution:** As long as the whitelisted pods continue to communicate strictly within their established structural pairs, the engine suppresses L4 anomaly penalties. If a pod deviates from its structural pair profile or conducts anomalous activity outside of it, the whitelist is instantly stripped, and aggressive L4 metrics analysis resumes.
 
 ### 2. The Dynamic Trust Engine
-Every pod starts with a maximum trust score of $100.0$. Network events yield deterministic trust penalties calculated through live tracking metrics:
+Every pod starts with a maximum trust score of $100$. Network events yield deterministic trust penalties calculated through live tracking metrics:
 * **Trust Threshold:** $\text{THRESHOLD} = 60$ dictates the boundary between normal operation and active containment.
-* **Trust Decay & Recovery:** To prevent permanent penalization from transient network jitter or misconfigurations, a background thread runs an asynchronous recovery mechanism. For pods not under active containment, trust rebounds by a calculated recovery rate ($\Delta = +0.5$) over configured time-intervals ($t = 10\text{s}$), allowing the score to asymptotically approach $100.0$.
+* **Trust Decay & Recovery:** To prevent permanent penalization from transient network jitter or misconfigurations, a background thread runs an asynchronous recovery mechanism. For pods not under active containment, trust rebounds by a calculated recovery rate ($\Delta = +0.5$) over configured time-intervals ($t = 10\text{s}$), allowing the score to asymptotically approach $100$.
 
 ---
 
@@ -66,7 +66,7 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
 * **Asynchronous Workers:**
   * `decay_trust()`: Recovers trust over time for clean pods.
   * `reset_stats()`: Periodically purges old network metric counters to prevent memory leaks and integer overflows.
-  * `reconcile_pods()`: Constantly polls the Kubernetes API. If an administrator manually modifies or clears a pod's quarantine label, the engine handles policy teardown, restores trust to $100.0$, and clears historical penalties cleanly.
+  * `reconcile_pods()`: Constantly polls the Kubernetes API. If an administrator manually modifies or clears a pod's quarantine label, the engine handles policy teardown, restores trust to $100$, and clears historical penalties cleanly.
   * `validate_health_whitelist()`: Automatically expires old L7 health mappings if active heartbeats cease within a specific timeframe.
 
 ---
