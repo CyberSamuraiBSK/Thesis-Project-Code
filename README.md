@@ -73,8 +73,6 @@ Attack simulation tools included:
 
 ---
 
----
-
 # Requirements
 
 ## Software
