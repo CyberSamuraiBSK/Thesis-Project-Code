@@ -1,6 +1,6 @@
 # Autonomous LightWeight IPS for Kubernetes Pod Network Security
 
-This repository contains the source code for my final thesis project: **A Lightweight, Real-Time Intrusion Prevention System (IPS) for Kubernetes Pod Network Security**. 
+This repository contains the source code for my final thesis project as a BSc student: **Post-Breach Cybersecurity inside Datacenter via Anomaly-Detection Network Defence and SDN-Based Deception**. 
 
 The system leverages **Cilium Hubble** to perform non-intrusive Layer 4 (L4) network flow monitoring inside a data center environment. It utilizes a dynamic **Trust Score Engine** to autonomously detect attack patterns and execute rapid mitigation strategies—either quarantining compromised internal servers or redirecting malicious client pods to decoupled honeypots. Crucially, the engine implements a **Layer 7 (L7) health-assisted bypass (whitelist mechanism)** to prevent false positives in scenarios where L4 inspection lacks sufficient context to make accurate security decisions.
 
