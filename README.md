@@ -96,13 +96,13 @@ This project is released under the MIT License.
 
 ---
 
-Thesis Reference
+## 🙏 Thesis Reference
 
 If you use this repository in academic work, please cite:
 ```bash
-Your Name,
-“A Flow-Based Post-Breach Detection and Response Framework for Kubernetes Environments,”
-MSc Thesis, University Name, 2026.
+Symeon Konstantinos Zampethanis,
+“Post-Breach Cybersecurity inside Datacenter via Anomaly-Detection Network Defence and SDN-Based Deception”,
+BSc Thesis, University of Thessali, 2026.
 ```
 ---
 ## ❗Disclaimer
