@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the implementation developed for the BSc thesis:
+This repository contains the implemented code developed for the BSc thesis:
 
 **“Post-Breach Cybersecurity inside Datacenters via Anomaly-Detection Network Defence and SDN-Based Deception”**
 
@@ -13,7 +13,7 @@ The framework combines:
 * Software-Defined Networking (SDN)-enabled policy enforcement
 * Adaptive deception techniques using honeypots
 
-The objective of the system is to provide lightweight post-breach detection and automated response capabilities for cloud-native Kubernetes infrastructures.
+The objective of the system is to provide lightweight post-breach detection and automated response capabilities for datacenters and cloud-native Kubernetes infrastructures.
 
 ---
 
