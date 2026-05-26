@@ -107,6 +107,12 @@ cd your-repository
 kubectl apply -f kubernetes/
 ```
 
+## Enable Hubble
+
+```bash
+hubble port-forward
+```
+
 ## Start Monitoring Components
 
 ```bash
