@@ -37,7 +37,9 @@ The IPS monitors and isolates several distinct network attack categories:
 | **DNS Enumeration** | High-frequency DNS queries ($53/\text{UDP}$) absent corresponding L7 application traffic. | $-10$ Trust |
 | **Application Brute Force** | High-velocity connection attempts on application boundaries ($80/\text{HTTP}$ and $22/\text{SSH}$). | $-15$ Trust |
 | **Connection Failures** | Dropped connections tracking. Evaluates drop-to-connect ratios ($>60\%$) over samples. | Variable (Up to $-5$) |
-ℹ️ *For the Connection Failures Servers labeled ad `trusted` are punished less ( $-1$) than the other `untrusted` devices.*
+
+
+ℹ️ *For the Connection Failures Servers labeled ad `trusted` are punished less ( $-1$ each time) than the other `untrusted` devices.*
 ---
 
 ## ⚡ Automated Response Engineering
