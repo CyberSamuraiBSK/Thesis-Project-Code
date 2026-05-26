@@ -71,6 +71,17 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
 
 ---
 
+## ⚙️ Example Detection Workflow
+*Attacker initiates malicious activity
+*Hubble exports flow telemetry
+*Detection engine analyzes behavior
+*Trust score decreases
+*Threshold exceeded
+*SDN mitigation policy applied
+*Traffic redirected to honeypot
+*Attacker activity monitored
+---
+
 ## 📋 Prerequisites & Local Development
 
 ### Requirements
@@ -94,16 +105,6 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
 
 This project is released under the MIT License.
 
----
-
-## 🙏 Thesis Reference
-
-If you use this repository in academic work, please cite:
-```bash
-Symeon Konstantinos Zampethanis,
-“Post-Breach Cybersecurity inside Datacenter via Anomaly-Detection Network Defence and SDN-Based Deception”,
-BSc Thesis, University of Thessali, 2026.
-```
 ---
 ## ❗Disclaimer
 
