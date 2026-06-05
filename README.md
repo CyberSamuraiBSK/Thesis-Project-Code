@@ -69,6 +69,7 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
   * `decay_trust()`: Recovers trust over time for clean pods.
   * `reset_stats()`: Periodically purges old network metric counters to prevent memory leaks and integer overflows.
   * `reconcile_pods()`: Constantly polls the Kubernetes API. If an administrator manually modifies or clears a pod's quarantine label, the engine handles policy teardown, restores trust to $100$, and clears historical penalties cleanly.
+  * `rotate_logs()`: Every 24 hours overwrites the logs file.
   * `validate_health_whitelist()`: Automatically expires old L7 health mappings if active heartbeats cease within a specific timeframe.
 
 ---
