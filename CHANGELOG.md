@@ -23,4 +23,4 @@ All notable changes to this project will be documented in this file.
 ## [v1.0.0] - 10/04/2026
 
 ### Added
-- Initial thesis implementation of the Trust Engine.
+- Initial code implementation for my thesis.
