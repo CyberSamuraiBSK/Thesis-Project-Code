@@ -284,6 +284,17 @@ def reset_stats():
 
 
 # ==================== RESPONSE MECHANISMS ====================
+def safe_redirect_worker(attacker_pod):
+    """Wrapper to execute redirect and revert state if it completely fails."""
+    try:
+        redirect_to_honeypot(attacker_pod)
+    except Exception as e:
+        print(f"[!] Critical failure executing redirect for {attacker_pod}: {e}")
+        with redirect_lock:
+            redirected.discard(attacker_pod)
+        with quarantine_pending_lock:
+            quarantine_pending.pop(attacker_pod, None)
+
 def redirect_to_honeypot(attacker_pod):
     """
     Redirect an attacking pod to a honeypot instead of the intended target.
@@ -297,11 +308,10 @@ def redirect_to_honeypot(attacker_pod):
     Args:
         attacker_pod: Name of the pod to redirect
     """
-    with redirect_lock:
-        if attacker_pod in redirected:
-            return
-        redirected.add(attacker_pod)
-        quarantine_pending[attacker_pod] = time.time()
+    if attacker_pod in redirected:
+        return
+    redirected.add(attacker_pod)
+    quarantine_pending[attacker_pod] = time.time()
 
     print(f"\n[*] Redirecting {attacker_pod} to Honeypot")
 
@@ -389,6 +399,16 @@ spec:
     except subprocess.CalledProcessError as e:
         print(f"[!] Failed to patch DNS: {e.stderr}")
 
+def safe_quarantine_worker(pod_name):
+    """Wrapper to execute quarantine and revert state if it completely fails."""
+    try:
+        quarantine_server(pod_name)
+    except Exception as e:
+        print(f"[!] Critical failure executing quarantine for {pod_name}: {e}")
+        with quarantine_lock:
+            quarantined.discard(pod_name)
+        with quarantine_pending_lock:
+            quarantine_pending.pop(pod_name, None)
 
 def quarantine_server(pod_name):
     """
@@ -400,11 +420,10 @@ def quarantine_server(pod_name):
     Args:
         pod_name: Name of the server pod to quarantine
     """
-    with quarantine_lock:
-        if pod_name in quarantined:
-            return
-        quarantined.add(pod_name)
-        quarantine_pending[pod_name] = time.time()
+    if pod_name in quarantined:
+        return
+    quarantined.add(pod_name)
+    quarantine_pending[pod_name] = time.time()
 
     print(f"\n[*] Applying quarantine to {pod_name}\n")
 
@@ -605,40 +624,51 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
     if time.time() - first < MIN_WHITELIST_TIME:
         return trust_scores.get(pod, 100.0)
 
-    # Only evaluate initiator pods
+   # Only evaluate initiator pods
     if not initiator:
         return trust_scores.get(pod, 100.0)
 
     penalty = 0
+
+    # === OPTIMIZED STATS EXTRACTION (Replaces copy.deepcopy) ===
+    # Extract only the specific metrics needed for detection to maximize throughput
+    with stats_out_lock:
+        pod_stats = stats_store[pod]
+        connections_count = pod_stats["connections"]
+        failed_connections_count = pod_stats["failed_connections"]
+        unique_ports_count = len(pod_stats["unique_ports"])
+        unique_destinations_count = len(pod_stats["unique_destinations"])
+
+	# Capture whether real web traffic exists safely while inside the lock
+        has_real_web_traffic = any(p in [80, 443] for p in pod_stats["unique_ports"])
+        
+        # Shallow copy or a quick snapshot of the destinations set for the whitelist enforcement check later in this function
+        unique_destinations_snapshot = set(pod_stats["unique_destinations"])
 
     # Check whitelist status
     with health_whitelist_lock:
         is_whitelisted = pod in health_whitelist
         pair = health_pairs.get(pod)
 
-    # Snapshot current statistics
-    with stats_out_lock:
-        s = copy.deepcopy(stats_store[pod])
-
     role = get_pod_role(pod)
     suspicious = False
 
     # === Connection Failure Detection ===
     fail_ratio = 0
-    if s["connections"] > 10:
-        fail_ratio = s["failed_connections"] / s["connections"]
+    if connections_count > 10:
+        fail_ratio = failed_connections_count / connections_count
 
-    if s["failed_connections"] > 10 or fail_ratio > FAIL_RATIO_THRESHOLD:
+    if failed_connections_count > 10 or fail_ratio > FAIL_RATIO_THRESHOLD:
         suspicious = True
         if not is_whitelisted:
             print(f"[!] High connection failure from {pod}")
             penalty += 1 if role == "trusted" else 5
 
     # === Port Scan Detection ===
-    if len(s["unique_ports"]) > PORT_SCAN_THRESHOLD:
+    if unique_ports_count > PORT_SCAN_THRESHOLD:
         if is_whitelisted:
             pair = health_pairs.get(pod)
-            destinations = set(s["unique_destinations"])
+            destinations = unique_destinations_snapshot
 
             if not (pair and destinations == {pair}):
                 print(f"[WHITELIST !] {pod} Port scan outside pair → removing whitelist")
@@ -657,10 +687,10 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
                 attack_history[pod].add("port_scan")
 
     # === Host Scan Detection ===
-    if len(s["unique_destinations"]) > HOST_SCAN_THRESHOLD:
+    if unique_destinations_count > HOST_SCAN_THRESHOLD:
         if is_whitelisted:
             pair = health_pairs.get(pod)
-            destinations = set(s["unique_destinations"])
+            destinations = unique_destinations_snapshot
 
             if not (pair and destinations == {pair}):
                 print(f"[WHITELIST !] {pod} Host scan outside pair → removing whitelist")
@@ -683,13 +713,12 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
 
     dns_rate = len(dns_queue)
 
-    if s["connections"] >= 5 and dns_rate > DNS_THRESHOLD:
-        has_real_traffic = any(p in [80, 443] for p in s["unique_ports"])
+    if connections_count >= 5 and dns_rate > DNS_THRESHOLD:
 
-        if not has_real_traffic and dns_rate > s["connections"] * 0.7:
+        if not has_real_traffic and dns_rate > connections_count * 0.7:
             if is_whitelisted:
                 pair = health_pairs.get(pod)
-                destinations = set(s["unique_destinations"])
+                destinations = unique_destinations_snapshot
 
                 if not (pair and destinations == {pair}):
                     print(f"[WHITELIST !] {pod} DNS outside pair → removing whitelist")
@@ -721,7 +750,7 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
             if len(syn_queue) > SYN_THRESHOLD:
                 if is_whitelisted:
                     pair = health_pairs.get(pod)
-                    destinations = set(s["unique_destinations"])
+                    destinations = unique_destinations_snapshot
 
                     if not (pair and destinations == {pair}):
                         print(f"[WHITELIST !] {pod} SYN outside pair → removing whitelist")
@@ -753,7 +782,7 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
             if len(udp_queue) > UDP_THRESHOLD:
                 if is_whitelisted:
                     pair = health_pairs.get(pod)
-                    destinations = set(s["unique_destinations"])
+                    destinations = unique_destinations_snapshot
 
                     if not (pair and destinations == {pair}):
                         print(f"[WHITELIST !] {pod} UDP outside pair → removing whitelist")
@@ -791,7 +820,7 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
         if scan_type:
             if is_whitelisted:
                 pair = health_pairs.get(pod)
-                destinations = set(s["unique_destinations"])
+                destinations = unique_destinations_snapshot
 
                 if not (pair and destinations == {pair}):
                     print(f"[WHITELIST !] {pod} {msg} outside pair → removing whitelist")
@@ -813,71 +842,76 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
     now = time.time()
 
     if dport == 80:
-        if http:
-            path = http.get("url") or ""
-
-            if not path.endswith("/health"):
-                with request_tracker_lock:
-                    queue = request_tracker[pod]
-                    queue.append(now)
-
-                    while queue and now - queue[0] > REQUEST_WINDOW:
-                        queue.popleft()
-
-                    if len(queue) > REQUEST_THRESHOLD:
-                        suspicious = True
-
-                        if is_whitelisted:
-                            pair = health_pairs.get(pod)
-                            destinations = set(s["unique_destinations"])
-
-                            if not (pair and destinations == {pair}):
-                                print(f"[WHITELIST !] {pod} HTTP brute force outside pair → removing whitelist")
-
-                                with health_whitelist_lock:
-                                    for p in [pod, pair]:
-                                        if p:
-                                            health_whitelist.discard(p)
-                                            health_last_seen.pop(p, None)
-                                            health_pairs.pop(p, None)
-                        else:
-                            print(f"[!] Possible HTTP Brute Force attack from {pod}")
-                            penalty += 15
-
-                            with attack_lock:
-                                attack_history[pod].add("http_bruteforce")
-
-    # === SSH Brute Force Detection ===
-    if dport == 22 and tcp_flags and tcp_flags.get("SYN") and not tcp_flags.get("ACK"):
-        with request_tracker2_lock:
-            queue = request_tracker2[pod]
+        with request_tracker_lock:
+            queue = request_tracker[pod]
+            
             queue.append(now)
 
+            # Prune stale entries to prevent memory leaks / OOM
             while queue and now - queue[0] > REQUEST_WINDOW:
                 queue.popleft()
 
-            if len(queue) > REQUEST_THRESHOLD:
-                suspicious = True
+            # Evaluate brute force behavior if it bypasses health metrics
+            is_http_request = http is not None
+            is_health_check = http and (http.get("url") or "").endswith("/health")
 
-                if is_whitelisted:
-                    pair = health_pairs.get(pod)
-                    destinations = set(s["unique_destinations"])
+            if is_http_request and not is_health_check:
+                if len(queue) > REQUEST_THRESHOLD:
+                    suspicious = True
 
-                    if not (pair and destinations == {pair}):
-                        print(f"[WHITELIST !] {pod} SSH brute force outside pair → removing whitelist")
+                    if is_whitelisted:
+                        pair = health_pairs.get(pod)
+                        destinations = unique_destinations_snapshot
 
-                        with health_whitelist_lock:
-                            for p in [pod, pair]:
-                                if p:
-                                    health_whitelist.discard(p)
-                                    health_last_seen.pop(p, None)
-                                    health_pairs.pop(p, None)
-                else:
-                    print(f"[!] Possible SSH Brute Force attack from {pod}")
-                    penalty += 15
+                        if not (pair and destinations == {pair}):
+                            print(f"[WHITELIST !] {pod} HTTP brute force outside pair → removing whitelist")
+                            with health_whitelist_lock:
+                                for p in [pod, pair]:
+                                    if p:
+                                        health_whitelist.discard(p)
+                                        health_last_seen.pop(p, None)
+                                        health_pairs.pop(p, None)
+                    else:
+                        print(f"[!] Possible HTTP Brute Force attack from {pod}")
+                        penalty += 15
+                        with attack_lock:
+                            attack_history[pod].add("http_bruteforce")
 
-                    with attack_lock:
-                        attack_history[pod].add("ssh_bruteforce")
+    # === SSH Brute Force Detection ===
+    if dport == 22:
+        with request_tracker2_lock:
+            queue = request_tracker2[pod]
+            
+            queue.append(now)
+
+            # Prune stale entries to prevent memory leaks / OOM
+            while queue and now - queue[0] > REQUEST_WINDOW:
+                queue.popleft()
+
+            # Check for specific brute-force signatures safely
+            is_syn_packet = tcp_flags and tcp_flags.get("SYN") and not tcp_flags.get("ACK")
+            
+            if is_syn_packet:
+                if len(queue) > REQUEST_THRESHOLD:
+                    suspicious = True
+
+                    if is_whitelisted:
+                        pair = health_pairs.get(pod)
+                        destinations = unique_destinations_snapshot
+
+                        if not (pair and destinations == {pair}):
+                            print(f"[WHITELIST !] {pod} SSH brute force outside pair → removing whitelist")
+                            with health_whitelist_lock:
+                                for p in [pod, pair]:
+                                    if p:
+                                        health_whitelist.discard(p)
+                                        health_last_seen.pop(p, None)
+                                        health_pairs.pop(p, None)
+                    else:
+                        print(f"[!] Possible SSH Brute Force attack from {pod}")
+                        penalty += 15
+                        with attack_lock:
+                            attack_history[pod].add("ssh_bruteforce")
 
     # === Whitelist Enforcement ===
     with health_whitelist_lock:
@@ -891,7 +925,7 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
 
         # Verify traffic only goes to paired pod
         if paired_pod and dport is not None:
-            if paired_pod not in s["unique_destinations"]:
+            if paired_pod not in unique_destinations_snapshot:
                 print(f"[WHITELIST !] {pod} contacted external → removing whitelist")
 
                 with health_whitelist_lock:
@@ -914,20 +948,38 @@ def update_trust(pod, dport=None, tcp_flags=None, protocol=None,
 
     # === Trigger Responses ===
     # Redirect attackers (untrusted pods below threshold)
-    if role != "trusted" and trust_scores[pod] < THRESHOLD and pod not in redirected:
-        threading.Thread(
-            target=redirect_to_honeypot,
-            args=(pod,),
-            daemon=True
-        ).start()
+    if role != "trusted" and trust_scores[pod] < THRESHOLD:
+        # Acquire the specific response lock immediately to prevent race conditions
+        with redirect_lock:
+            if pod not in redirected:
+                # 1. MARK IMMEDIATELY to block subsequent flows from spawning threads
+                redirected.add(pod)
+                with quarantine_pending_lock:
+                    quarantine_pending[pod] = time.time()
+                
+                # 2. Safely spawn the worker thread now that the door is shut
+                threading.Thread(
+                    target=safe_redirect_worker,
+                    args=(pod,),
+                    daemon=True
+                ).start()
 
     # Quarantine compromised servers
-    if role == "trusted" and trust_scores[pod] < THRESHOLD and pod not in quarantined:
-        threading.Thread(
-            target=quarantine_server,
-            args=(pod,),
-            daemon=True
-        ).start()
+    if role == "trusted" and trust_scores[pod] < THRESHOLD:
+        # Acquire the specific response lock immediately
+        with quarantine_lock:
+            if pod not in quarantined:
+                # MARK IMMEDIATELY to block subsequent loops
+                quarantined.add(pod)
+                with quarantine_pending_lock:
+                    quarantine_pending[pod] = time.time()
+                
+                # Safely spawn the quarantine thread
+                threading.Thread(
+                    target=safe_quarantine_worker,
+                    args=(pod,),
+                    daemon=True
+                ).start()
 
     return trust_scores[pod]
 
