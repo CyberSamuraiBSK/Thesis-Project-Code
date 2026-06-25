@@ -99,7 +99,7 @@ The runtime relies heavily on multi-threaded data structures shielded by atomic 
    cd Thesis-Project-Code
 2. Run the code:
    ```bash
-   python3 revisedTrustEngineV2.py   
+   python3 revisedTrustEngine.py   
 ⚠️**NOTE** *It is crucial to properly setup the enviroment (Kubernetes, Cillium, Hubble etc.) before running the code as it cannot run natively on Kubernetes.*  
 
 
