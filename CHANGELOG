@@ -1,2 +1,11 @@
 trustEngine.py:
 * original python code intended for the thesis.
+
+revisedTrustEngine.py:
+* revised code with more clear structure and better documentation intended for the github repository.
+
+revisedTrustEngineV2.py:
+* Updated code version to address:
+** Memory Leak Resolution: Fix: Restructured the tracking logic to always append and prune old timestamps at the immediate entry point of the port condition (dport == 80 and dport == 22), completely separating queue maintenance from inner signature verification blocks.
+** TOCTOU Prevention: Fix: Enforced a strict state lockout by moving the .add(pod) tracking mechanism inside the synchronized locks (redirect_lock and quarantine_lock) before background worker invocation. Created safe worker wrappers (safe_redirect_worker / safe_quarantine_worker) to cleanly revert the state if a kubectl command encounters a critical orchestration failure.
+** Performance Enchantement: Fix: Eliminated copy.deepcopy() entirely. Replaced it with a microsecond-duration read lock (with stats_out_lock:) that pulls only raw primitive statistics (counts and integers) and builds a shallow snapshot copy of only the specific network destinations required for whitelist evaluation.
