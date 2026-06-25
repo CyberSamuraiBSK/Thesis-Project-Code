@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+Current Version: [2.0.0]
+
 Trust Engine for Kubernetes Pod Network Security
 
 This module monitors network flows in a Kubernetes cluster using Hubble,
