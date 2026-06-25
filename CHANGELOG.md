@@ -1,20 +1,26 @@
-trustEngine.py
-- Original Python implementation developed for the thesis project.
+# Changelog
 
-revisedTrustEngine.py
-- Refactored version with improved code structure, readability, and documentation for public repository use.
+All notable changes to this project will be documented in this file.
 
-revisedTrustEngineV2.py
-- Updated version with security, stability, and performance improvements:
+## [v2.0.0] - 25/06/2026
 
-  - Memory Leak Resolution
-    - Restructured timestamp tracking logic to always append and prune entries immediately upon matching monitored ports (dport == 80 or dport == 22).
-    - Separated queue maintenance from nested signature-verification logic to ensure consistent cleanup and bounded memory usage.
+### Fixed
+- Restructured timestamp tracking logic to prevent memory leaks.
+- Eliminated TOCTOU race conditions by moving pod state tracking inside synchronized locks.
+- Added safe worker wrappers to recover cleanly from kubectl orchestration failures.
 
-  - TOCTOU (Time-of-Check to Time-of-Use) Prevention
-    - Moved pod state tracking (.add(pod)) inside synchronized lock sections (redirect_lock and quarantine_lock) before invoking background workers.
-    - Added safe worker wrappers (safe_redirect_worker and safe_quarantine_worker) to automatically revert state when critical kubectl orchestration failures occur.
+### Improved
+- Removed all usage of `copy.deepcopy()`.
+- Replaced deep-copy operations with lightweight snapshot generation under `stats_out_lock`.
+- Reduced lock duration and memory overhead during whitelist evaluation.
 
-  - Performance Enhancement
-    - Removed all use of copy.deepcopy().
-    - Replaced deep-copy operations with a short-duration read lock (stats_out_lock) that extracts only required primitive statistics and constructs a minimal shallow snapshot containing the specific network destinations needed for whitelist evaluation.
+## [v1.1.0] - 05/06/2026
+
+### Changed
+- Refactored code structure for improved readability and maintainability.
+- Expanded inline documentation and comments.
+
+## [v1.0.0] - 10/04/2026
+
+### Added
+- Initial thesis implementation of the Trust Engine.
